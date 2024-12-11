@@ -49,14 +49,14 @@ def Phase_1(items, capacite, alpha):
         print(cout_max)'''
         '''3 eme etape: definir un seuil: '''
         seuil = cout_max - alpha * (cout_max - cout_min)
-        #print(seuil)
+        print(seuil)
         '''4 eme etape: Construire la RCL'''
         rcl = [i for i in elements_restants if i["cout"] >= seuil]
-        #print(f'La liste RCL contient : {rcl}')
+        print(f'La liste RCL contient : {rcl}')
 
         '''5 eme etape: selection aleatoire'''
         element_aleatoire = random.choice(rcl)
-        #print(f'lelement aleatoire que jai choisi est: {element_aleatoire["objet"]}')
+        print(f'lelement aleatoire que jai choisi est: {element_aleatoire["objet"]}')
         # Vérifier la contrainte de poids
         if capacite_debut + element_aleatoire["poids"] <= capacite:
             solution.append(element_aleatoire)
@@ -78,23 +78,29 @@ def recherche_locale(solution, items, capacite):
         for item in items:
             if item not in best_solution:  
                 new_solution = best_solution + [item]
+                print(f'la nouvelle solution pour ajout est: {new_solution}')
                 new_weight = sum(i["poids"] for i in new_solution)
                 new_value = sum(i["valeur"] for i in new_solution)
-                
+                print(f'new value pour ajout est: {new_value}')
                 if new_weight <= capacite and new_value > best_value:
                     best_solution = new_solution
+                    print(f'Best solution pour lajout dun objet: {best_solution}')
                     best_value = new_value
+                    print(f'Best value pour lajout dun objet: {best_value} et capacite sac a dos: {new_weight}')
                     improved = True
                     break
 
         # Étape 2: Supprimer un objet existant
         for item in best_solution:
             new_solution = [i for i in best_solution if i != item]
+            print(f'la nouvelle solution pour suppression est: {new_solution}')
             new_value = sum(i["valeur"] for i in new_solution)
-            
+            print(f'new value pour suppression est: {new_value} et capacite sac a dos: {new_weight}')
             if new_value > best_value:
                 best_solution = new_solution
+                print(f'Best solution pour la suppression dun objet: {best_solution}')
                 best_value = new_value
+                print(f'Best value pour la suppression dun objet: {best_value}')
                 improved = True
                 break
 
@@ -103,12 +109,15 @@ def recherche_locale(solution, items, capacite):
             for item_to_add in items:
                 if item_to_add not in best_solution:
                     new_solution = [i for i in best_solution if i != item_to_remove] + [item_to_add]
+                    print(f'la nouvelle solution pour permutation est: {new_solution}')
                     new_weight = sum(i["poids"] for i in new_solution)
                     new_value = sum(i["valeur"] for i in new_solution)
-                    
+                    print(f'new value pour permutation est: {new_value} et capacite sac a dos: {new_weight}')
                     if new_weight <= capacite and new_value > best_value:
                         best_solution = new_solution
+                        print(f'Best solution pour la permutation dun objet: {best_solution}')
                         best_value = new_value
+                        print(f'Best value pour la permutation dun objet: {best_value}')
                         improved = True
                         break
             if improved:
