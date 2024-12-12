@@ -23,8 +23,7 @@ def calcul_cout(items):
         item["cout"] = item["valeur"] / item["poids"]
 
 #---------------------------Randomized construction-------------------------------------------------------------------
-
-# Phase 1 : Construction de la solution avec GRASP
+# Phase 1 : Construction de la solution aleatoire
 def Phase_1(items, capacite, alpha):
     '''1 ere etape: calculer le cout de  chaque objet 
         2 eme etape: ordre decroissant des couts
@@ -34,9 +33,9 @@ def Phase_1(items, capacite, alpha):
 #----------------------------------------------------------------------------------------------------------------------
     '''1 ere etape: Calcule du cout de chaque objet'''
     calcul_cout(items)
-    
+
     solution = []
-    capacite_debut = 0
+    capacite_debut = 0 
     rcl = []
     
     while capacite_debut < capacite:
@@ -56,7 +55,7 @@ def Phase_1(items, capacite, alpha):
         seuil = cout_min + alpha * (cout_max - cout_min)
         #print(seuil)
         '''4 eme etape: Construire la RCL'''
-        rcl = [i for i in elements_restants if i["cout"] >= seuil]
+        rcl = [i for i in elements_restants if i["cout"] <= seuil]
          #print(f'La liste RCL contient : {rcl}')
 
         '''5 eme etape: selection aleatoire'''
@@ -150,6 +149,68 @@ def recherche_locale(solution, items, capacite):
 def grasp(items, capacite, max_iterations):
     best_solution = None
     best_value = 0
+    
+    for iteration in range(max_iterations):
+
+        print(f"\nItération {iteration + 1} :")
+        # Choisir un alpha aléatoire pour la construction de la solution
+        alpha_value = random.uniform(0, 1)
+        solution_initiale = Phase_1(items, capacite, alpha_value)
+        
+        # Améliorer la solution avec la recherche locale
+        solution_finale = recherche_locale(solution_initiale, items, capacite)
+        # Calculer la valeur finale
+        valeur_finale = sum(item["valeur"] for item in solution_finale)
+        print(f"  Valeur de la solution finale : {valeur_finale}")
+        print(f"  Solution : {[item['objet'] for item in solution_finale]}")
+        # Mettre à jour la meilleure solution trouvée
+        if valeur_finale > best_value:
+            best_solution = solution_finale
+            best_value = valeur_finale
+            print(f"  Meilleure solution trouvée jusqu'à maintenant : {[item['objet'] for item in best_solution]}, Valeur : {best_value}")
+    
+    return best_solution, best_value
+
+# Exécution de GRASP
+max_iterations = 15  # Nombre d'itérations maximum
+solution_finale, valeur_finale = grasp(items, capacite, max_iterations)
+#print(solution_finale)
+print(f"\nMeilleure solution trouvée : {[item['objet'] for item in solution_finale]}, Valeur : {valeur_finale}")
+
+
+#path relinking.
+
+#-------------------------------------------------------------------------------------------------------------------------------------
+def path_linking(solution_1, solution_2, items, capacite):
+    """
+    Combine deux solutions pour explorer des solutions intermédiaires
+    et effectuer une recherche locale sur celles-ci.
+    """
+    # Étape 1: Calculer les objets communs entre les deux solutions
+    objets_communs = [item for item in solution_1 if item in solution_2]
+    
+    # Étape 2: Ajouter des objets de solution_2 qui ne sont pas dans solution_1
+    objets_uniques = [item for item in solution_2 if item not in solution_1]
+    
+    # Étape 3: Construire une solution intermédiaire basée sur les objets communs
+    solution_intermediaire = objets_communs[:]
+    
+    # Ajouter les objets uniques à la solution intermédiaire tout en respectant la capacité
+    poids_total = sum(item["poids"] for item in solution_intermediaire)
+    for item in objets_uniques:
+        if poids_total + item["poids"] <= capacite:
+            solution_intermediaire.append(item)
+            poids_total += item["poids"]
+    
+    # Étape 4: Appliquer une recherche locale pour améliorer la solution intermédiaire
+    solution_amelioree = recherche_locale(solution_intermediaire, items, capacite)
+    
+    return solution_amelioree
+
+def grasp_with_path_linking(items, capacite, max_iterations):
+    best_solution = None
+    best_value = 0
+    solutions = []  # Stocke toutes les solutions finales pour le path linking
 
     for iteration in range(max_iterations):
         print(f"\nItération {iteration + 1} :")
@@ -170,11 +231,30 @@ def grasp(items, capacite, max_iterations):
             best_solution = solution_finale
             best_value = valeur_finale
             print(f"  Meilleure solution trouvée jusqu'à maintenant : {[item['objet'] for item in best_solution]}, Valeur : {best_value}")
+        
+        # Ajouter la solution actuelle à la liste des solutions
+        solutions.append(solution_finale)
+
+    # Phase de Path Linking
+    print("\nPhase de Path Linking :")
+    for i in range(len(solutions)):
+        for j in range(i + 1, len(solutions)):
+            # Combiner deux solutions avec path linking
+            solution_pl = path_linking(solutions[i], solutions[j], items, capacite)
+            valeur_pl = sum(item["valeur"] for item in solution_pl)
+            print(f"  Solution path linking : {[item['objet'] for item in solution_pl]}, Valeur : {valeur_pl}")
+            
+            # Mettre à jour la meilleure solution trouvée
+            if valeur_pl > best_value:
+                best_solution = solution_pl
+                best_value = valeur_pl
+                print(f"  Nouvelle meilleure solution trouvée : {[item['objet'] for item in best_solution]}, Valeur : {best_value}")
 
     return best_solution, best_value
 
-# Exécution de GRASP
-max_iterations = 15  # Nombre d'itérations maximum
-solution_finale, valeur_finale = grasp(items, capacite, max_iterations)
 
-print(f"\nMeilleure solution trouvée : {[item['objet'] for item in solution_finale]}, Valeur : {valeur_finale}")
+# Exécution de GRASP avec Path Linking
+max_iterations = 15  # Nombre d'itérations maximum
+solution_finale, valeur_finale = grasp_with_path_linking(items, capacite, max_iterations)
+
+print(f"\nMeilleure solution trouvée avec Path Linking : {[item['objet'] for item in solution_finale]}, Valeur : {valeur_finale}")
